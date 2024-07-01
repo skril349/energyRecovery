@@ -18,6 +18,7 @@ int motornum;
 int state = 0;
 int test;
 float move_to = 2;
+float constantDeRotacio = 20/33;
 float turns = 2;
 bool calibrated = false;
 int cicles = 2;
@@ -31,6 +32,9 @@ SoftwareSerial odrive_serial(8, 9);
 ODriveArduino odrive(odrive_serial);
 
 void moveMotorToPosition(int axis, float voltes) {
+  Serial.println(voltes);
+  voltes = voltes;
+  Serial.println(voltes);
   // Configura el mode d'entrada del controlador per l'eix especificat
   odrive_serial << "w axis" << axis << ".controller.config.input_mode = INPUT_MODE_TRAP_TRAJ" << '\n';
   delay(5);
@@ -171,7 +175,7 @@ void loop() {
 
     case 3:
       moveMotorToPosition(1, move_to);
-      moveMotorToPosition(0, turns);
+      moveMotorToPosition(0, turns * 20/33);
       state = 4;
       break;
     case 4:
@@ -237,7 +241,7 @@ void loop() {
         Serial.println(pauseIn);
         delay(pauseIn);
         moveMotorToPosition(1, move_to);
-        moveMotorToPosition(0, turns);
+        moveMotorToPosition(0, turns * 20/33);
         delay(pauseOut);
         moveMotorToPosition(1, 0);
         moveMotorToPosition(0, 0);
