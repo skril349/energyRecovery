@@ -20,6 +20,8 @@ int test;
 float move_to;
 float turns;
 bool calibrated = false;
+int cicles = 0;
+int pause = 0;
 
 // SoftwareSerial for ODrive communication
 SoftwareSerial odrive_serial(8, 9);
@@ -118,14 +120,14 @@ void setup() {
   // Set parameters for both motors
   odrive_serial << "w axis0.controller.config.vel_limit " << 30.0f << '\n';
   odrive_serial << "w axis0.motor.config.current_lim " << 25.0f << '\n';
-  odrive_serial << "w axis0.trap_traj.config.accel_lim " << 10.0f << '\n';
-  odrive_serial << "w axis0.trap_traj.config.decel_lim " << 10.0f << '\n';
+  odrive_serial << "w axis0.trap_traj.config.accel_lim " << 50.0f << '\n';
+  odrive_serial << "w axis0.trap_traj.config.decel_lim " << 50.0f << '\n';
   odrive_serial << "w axis0.trap_traj.config.vel_lim " << 30.0f << '\n';
 
   odrive_serial << "w axis1.controller.config.vel_limit " << 30.0f << '\n';
   odrive_serial << "w axis1.motor.config.current_lim " << 25.0f << '\n';
-  odrive_serial << "w axis1.trap_traj.config.accel_lim " << 10.0f << '\n';
-  odrive_serial << "w axis1.trap_traj.config.decel_lim " << 10.0f << '\n';
+  odrive_serial << "w axis1.trap_traj.config.accel_lim " << 50.0f << '\n';
+  odrive_serial << "w axis1.trap_traj.config.decel_lim " << 50.0f << '\n';
   odrive_serial << "w axis1.trap_traj.config.vel_lim " << 30.0f << '\n';
 
   Serial.println("Ready!");
@@ -148,9 +150,12 @@ void loop() {
         }
       }
       break;
+
+
     case 1:
-      if (Serial.available()) {
-        turns = Serial.parseFloat();
+      if (Serial.available() >= 1) {
+        String input = Serial.readStringUntil('\n');
+        turns = input.toFloat();
         Serial.print("Has introduït: ");
         Serial.println(turns);
         Serial.println("Introdueix el número de voltes de TRACCIÓ que vols que dongui el motor:");
@@ -158,8 +163,9 @@ void loop() {
       }
       break;
     case 2:
-      if (Serial.available()) {
-        move_to = Serial.parseFloat();
+      if (Serial.available() >= 1) {
+        String input = Serial.readStringUntil('\n');
+        move_to = input.toFloat();
         Serial.print("Has introduït: ");
         Serial.println(move_to);
         Serial.println("Esperem 5 segons per fer el primer moviment i així posar la segona mostra:");
@@ -174,13 +180,81 @@ void loop() {
       break;
     case 3:
       moveMotorToPosition(1, move_to);
+      moveMotorToPosition(0, turns);
       state = 4;
       break;
     case 4:
       // Afegir qualsevol altra lògica que vulguis per a l'estat 4
-      Serial.println("Moviment completat.");
-      state = 0; // Reiniciar l'estat per permetre un nou cicle de moviment
+      Serial.println("Moviment completat. Pots posar la segona mostra. prem 'y' quan tinguis la segona mostra posada");
+      state = 5; // Reiniciar l'estat per permetre un nou cicle de moviment
       break;
+
+    case 5:
+      if (Serial.available()) {
+        char c = Serial.read();
+        if (c == 'y' || c == 'Y') {
+          Serial.println("Retornarem a la posició inicial en 5 segons");
+          for (int i = 5; i > 0; i--) {
+            delay(1000);
+            Serial.print(i);
+            Serial.print(" ");
+          }
+          Serial.println();
+          state = 6;
+        }
+      }
+      break;
+
+    case 6:
+      moveMotorToPosition(1, 0);
+      moveMotorToPosition(0, 0);
+      Serial.println("Selecciona el nombre de cicles que vols fer");
+      state = 7;
+      break;
+
+    case 7:
+      if (Serial.available() > 0) {
+        String input = Serial.readStringUntil('\n');
+        cicles = input.toInt();
+        Serial print("Cicles = ");
+        Serial.println(cicles);
+        Serial.println("i la pausa entre cicles? ");
+        state = 8;
+
+      }
+      break;
+
+    case 8:
+      if (Serial.available() > 0) {
+        String input = Serial.readStringUntil('\n');
+        pause = input.toInt() * 1000;
+        Serial.print("pause en milisegons = ");
+        Serial.println(pause);
+        Serial.println("Esperem 5 segons per començar els cicles");
+        for (int i = 5; i > 0; i--) {
+          delay(1000);
+          Serial.print(i);
+          Serial.print(" ");
+        }
+        Serial.println();
+        
+        for (int i = 0; i < cicles; i ++) {
+          Serial.println(pause);
+          delay(pause);
+          moveMotorToPosition(1, move_to);
+          moveMotorToPosition(0, turns);
+          delay(pause);
+          moveMotorToPosition(1, 0);
+          moveMotorToPosition(0, 0);
+
+        }
+
+
+      }
+      break;
+
+
+
     default:
       break;
   }
