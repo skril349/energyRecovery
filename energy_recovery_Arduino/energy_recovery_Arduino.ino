@@ -2,6 +2,10 @@
 #include <HardwareSerial.h>
 #include <SoftwareSerial.h>
 #include <ODriveArduino.h>
+#include <Servo.h>
+
+Servo myservo;  // crea un objecte Servo per controlar el servomotor
+
 
 // Printing with stream operator helper functions
 template<class T> inline Print& operator <<(Print &obj, T arg) {
@@ -17,9 +21,9 @@ template<> inline Print& operator <<(Print &obj, float arg) {
 int motornum;
 int state = 0;
 int test;
-float move_to = 2;
+float move_to = 10;
 float constantDeRotacio = 20/33;
-float turns = 2;
+float turns = 10;
 bool calibrated = false;
 int cicles = 2;
 int pauseIn = 8000;
@@ -30,6 +34,36 @@ SoftwareSerial odrive_serial(8, 9);
 
 // ODrive object
 ODriveArduino odrive(odrive_serial);
+
+//Servomotor:
+
+void moveLeft() {
+  myservo.write(180); // mou el servomotor a l'esquerra
+  delay(700);
+  stopServo();
+}
+
+void moveRight() {
+  myservo.write(0); // mou el servomotor a la dreta
+  delay(700);
+  stopServo();
+}
+void moveCenterFromRight() {
+  myservo.write(0); // mou el servomotor a la dreta
+  delay(350);
+  stopServo();
+}
+void moveCenterFromLeft() {
+  myservo.write(180); // mou el servomotor a la dreta
+  delay(350);
+  stopServo();
+}
+
+void stopServo() {
+  myservo.write(90);  // situa el servomotor a la posició mitjana (90 graus)
+}
+
+
 
 void moveMotorToPosition(int axis, float voltes) {
   Serial.println(voltes);
@@ -118,7 +152,8 @@ void setup() {
 
   // Serial to PC
   Serial.begin(115200);
-
+  myservo.attach(11);   // adjunta el servomotor al pin digital 9 de l'Arduino
+  myservo.write(90);   // situa el servomotor a la posició mitjana (quiet)
   Serial.println("ODriveArduino");
   Serial.println("Setting parameters...");
 
@@ -136,11 +171,11 @@ void setup() {
   odrive_serial << "w axis1.trap_traj.config.vel_lim " << 30.0f << '\n';
 
   Serial.println("Ready!");
-
+  moveCenterFromRight();
   // Check and calibrate motors
   checkAndCalibrateAxis(0);
   checkAndCalibrateAxis(1);
-
+  
   Serial.println("posiciona el pistó 1 en la posició mínima de forma manual i introdueix la mostra. escriu 'y' quan ho tinguis fet i tanca la tapa amb el motor posat: ");
 }
 
@@ -174,7 +209,7 @@ void loop() {
       break;
 
     case 3:
-      moveMotorToPosition(1, move_to);
+      moveMotorToPosition(1, move_to * -1);
       moveMotorToPosition(0, turns * 20/33);
       state = 4;
       break;
@@ -221,15 +256,18 @@ void loop() {
         Serial.print(" ");
       }
       Serial.println();
+      moveLeft();
+      Serial.println("Si vols començar els cicles prem 'y' :");
       state = 8;
 
-      Serial.println("Si vols començar els cicles prem 'y' :");
+      
       break;
 
       case 8:
       if (Serial.available()) {
         char c = Serial.read();
         if (c == 'y' || c == 'Y') {
+          
           state = 9;
         }
       }
@@ -238,13 +276,20 @@ void loop() {
     case 9:
 
       for (int i = 0; i < cicles; i ++) {
+        moveCenterFromRight();
         Serial.println(pauseIn);
         delay(pauseIn);
-        moveMotorToPosition(1, move_to);
+        moveMotorToPosition(1, move_to * -1);
         moveMotorToPosition(0, turns * 20/33);
+        delay(1000);
+        moveRight();
         delay(pauseOut);
+        moveCenterFromLeft();
         moveMotorToPosition(1, 0);
         moveMotorToPosition(0, 0);
+        delay(1000);
+        moveLeft();
+        delay(1000);
 
       }
       Serial.println("Si vols començar els cicles de nou prem 'y' :");
