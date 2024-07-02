@@ -219,7 +219,7 @@ void setup() {
   odrive_serial << "w axis1.trap_traj.config.vel_lim " << 30.0f << '\n';
 
   Serial.println("Ready!");
-  //moveCenterFromRight();
+  moveCenterFromRight();
   // Check and calibrate motors
   checkAndCalibrateAxis(0);
   checkAndCalibrateAxis(1);
@@ -298,7 +298,7 @@ void loop() {
         Serial.print(" ");
       }
       Serial.println();
-      //moveLeft();
+      moveLeft();
       Serial.println("Si vols començar els cicles prem 'y' :");
       state = 8;
       break;
@@ -314,22 +314,22 @@ void loop() {
 
     case 9:
       for (int i = 0; i < cicles; i++) {
-        //moveCenterFromRight();
         Serial.println(pauseIn);
         delay(pauseIn);
+        moveCenterFromRight();
         //moveMotorToPosition(1, move_to * -1);
         //moveMotorToPosition(0, turns * 20 / 33);
 
         moveMotorsToPosition(0,turns * 20/33, 1, move_to * -1);
         //delay(1000);
-        //moveRight();
+        moveRight();
         delay(pauseOut);
-        //moveCenterFromLeft();
+        moveCenterFromLeft();
         //moveMotorToPosition(1, 0);
         //moveMotorToPosition(0, 0);
         moveMotorsToPosition(0,0, 1,0);
         //delay(1000);
-        //moveLeft();
+        moveLeft();
         //delay(1000);
 
         // Comprova si hi ha dades disponibles al port sèrie
