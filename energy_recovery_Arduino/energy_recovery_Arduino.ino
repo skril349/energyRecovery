@@ -334,12 +334,13 @@ void loop() {
 
         // Comprova si hi ha dades disponibles al port sèrie
         if (Serial.available() > 0) {
-          String input = Serial.readString(); // Llegeix les dades del port sèrie
-          input.trim(); // Elimina espais en blanc al voltant de la cadena
-
+          int input = Serial.parseInt(); // Llegeix les dades del port sèrie
+          Serial.println(input);
           // Si la dada rebuda és "stop", surt del bucle
-          if (input.equalsIgnoreCase("stop")) {
+          if (input == -1) {
             Serial.println("Cicles aturats per l'usuari.");
+            i = cicles;
+            state = 10;
             break;
           }
         }
