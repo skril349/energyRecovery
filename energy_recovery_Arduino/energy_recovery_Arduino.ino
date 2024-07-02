@@ -6,6 +6,10 @@
 
 Servo myservo;  // crea un objecte Servo per controlar el servomotor
 
+// Constants per als estats del motor
+// Utilitza els valors de l'enum definits a ODriveEnums.h
+// AxisState AXIS_STATE_IDLE = 1;
+// AxisState AXIS_STATE_CLOSED_LOOP_CONTROL = 8;
 
 // Printing with stream operator helper functions
 template<class T> inline Print& operator <<(Print &obj, T arg) {
@@ -22,12 +26,13 @@ int motornum;
 int state = 0;
 int test;
 float move_to = 10;
-float constantDeRotacio = 20/33;
+float constantDeRotacio = 20 / 33;
 float turns = 10;
 bool calibrated = false;
 int cicles = 2;
 int pauseIn = 8000;
 int pauseOut = 12000;
+float positionTolerance = 0.05;  // Tolerància per comprovar la posició del motor
 
 // SoftwareSerial for ODrive communication
 SoftwareSerial odrive_serial(8, 9);
@@ -36,7 +41,6 @@ SoftwareSerial odrive_serial(8, 9);
 ODriveArduino odrive(odrive_serial);
 
 //Servomotor:
-
 void moveLeft() {
   myservo.write(180); // mou el servomotor a l'esquerra
   delay(700);
@@ -63,8 +67,6 @@ void stopServo() {
   myservo.write(90);  // situa el servomotor a la posició mitjana (90 graus)
 }
 
-
-
 void moveMotorToPosition(int axis, float voltes) {
   Serial.println(voltes);
   voltes = voltes;
@@ -75,8 +77,54 @@ void moveMotorToPosition(int axis, float voltes) {
 
   // Mou l'eix especificat al nombre de voltes indicat
   odrive_serial << "t " << axis << " " << voltes << '\n';
+
+  // Espera fins que el motor hagi arribat a la posició
+  while (!isMotorAtPosition(axis, voltes)) {
+    delay(100);
+  }
 }
 
+
+void moveMotorsToPosition(int axis0, float voltes0, int axis1, float voltes1) {
+  // Configura el mode d'entrada del controlador per l'eix especificat
+  odrive_serial << "w axis" << axis0 << ".controller.config.input_mode = INPUT_MODE_TRAP_TRAJ" << '\n';
+  delay(5);
+  odrive_serial << "w axis" << axis1 << ".controller.config.input_mode = INPUT_MODE_TRAP_TRAJ" << '\n';
+
+
+  // Mou l'eix especificat al nombre de voltes indicat
+  odrive_serial << "t " << axis0 << " " << voltes0 << '\n';
+  delay(5);
+  odrive_serial << "t " << axis1 << " " << voltes1 << '\n';
+
+  // Espera fins que el motor hagi arribat a la posició
+  while (!isMotorAtPosition(axis0, voltes0) || !isMotorAtPosition(axis1, voltes1)) {
+    delay(100);
+  }
+}
+
+
+
+
+bool isMotorAtPosition(int motor_number, float setpoint) {
+  // Llegeix la posició actual del motor
+  odrive_serial << "r axis" << motor_number << ".encoder.pos_estimate\n";
+  float position = readString().toFloat();
+
+  // Llegeix l'estat actual del motor
+  odrive_serial << "r axis" << motor_number << ".current_state\n";
+  int current_state = readString().toInt();
+
+  if (current_state == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+    if (abs(position - setpoint) < positionTolerance) {
+      Serial.println("El motor ha arribat a la posició desitjada.");
+      return true;
+    }
+  } else {
+    Serial.println("El motor no està en control en bucle tancat.");
+  }
+  return false;
+}
 
 // functions
 float GetIntensity(int motor_number) {
@@ -152,7 +200,7 @@ void setup() {
 
   // Serial to PC
   Serial.begin(115200);
-  myservo.attach(11);   // adjunta el servomotor al pin digital 9 de l'Arduino
+  myservo.attach(11);   // adjunta el servomotor al pin digital 11 de l'Arduino
   myservo.write(90);   // situa el servomotor a la posició mitjana (quiet)
   Serial.println("ODriveArduino");
   Serial.println("Setting parameters...");
@@ -171,11 +219,11 @@ void setup() {
   odrive_serial << "w axis1.trap_traj.config.vel_lim " << 30.0f << '\n';
 
   Serial.println("Ready!");
-  moveCenterFromRight();
+  //moveCenterFromRight();
   // Check and calibrate motors
   checkAndCalibrateAxis(0);
   checkAndCalibrateAxis(1);
-  
+
   Serial.println("posiciona el pistó 1 en la posició mínima de forma manual i introdueix la mostra. escriu 'y' quan ho tinguis fet i tanca la tapa amb el motor posat: ");
 }
 
@@ -190,10 +238,7 @@ void loop() {
       }
       break;
 
-
-
     case 2:
-
       Serial.print("Ens mourem a: ");
       Serial.println(move_to);
       Serial.print("Rotarem a :");
@@ -210,7 +255,7 @@ void loop() {
 
     case 3:
       moveMotorToPosition(1, move_to * -1);
-      moveMotorToPosition(0, turns * 20/33);
+      moveMotorToPosition(0, turns * 20 / 33);
       state = 4;
       break;
     case 4:
@@ -241,10 +286,7 @@ void loop() {
       state = 7;
       break;
 
-
-
     case 7:
-
       Serial.print("pauseIn en milisegons = ");
       Serial.println(pauseIn);
       Serial.print("pauseOut en milisegons = ");
@@ -256,56 +298,64 @@ void loop() {
         Serial.print(" ");
       }
       Serial.println();
-      moveLeft();
+      //moveLeft();
       Serial.println("Si vols començar els cicles prem 'y' :");
       state = 8;
-
-      
       break;
 
-      case 8:
+    case 8:
       if (Serial.available()) {
         char c = Serial.read();
         if (c == 'y' || c == 'Y') {
-          
           state = 9;
         }
       }
       break;
 
     case 9:
-
-      for (int i = 0; i < cicles; i ++) {
-        moveCenterFromRight();
+      for (int i = 0; i < cicles; i++) {
+        //moveCenterFromRight();
         Serial.println(pauseIn);
         delay(pauseIn);
-        moveMotorToPosition(1, move_to * -1);
-        moveMotorToPosition(0, turns * 20/33);
-        delay(1000);
-        moveRight();
-        delay(pauseOut);
-        moveCenterFromLeft();
-        moveMotorToPosition(1, 0);
-        moveMotorToPosition(0, 0);
-        delay(1000);
-        moveLeft();
-        delay(1000);
+        //moveMotorToPosition(1, move_to * -1);
+        //moveMotorToPosition(0, turns * 20 / 33);
 
+        moveMotorsToPosition(0,turns * 20/33, 1, move_to * -1);
+        //delay(1000);
+        //moveRight();
+        delay(pauseOut);
+        //moveCenterFromLeft();
+        //moveMotorToPosition(1, 0);
+        //moveMotorToPosition(0, 0);
+        moveMotorsToPosition(0,0, 1,0);
+        //delay(1000);
+        //moveLeft();
+        //delay(1000);
+
+        // Comprova si hi ha dades disponibles al port sèrie
+        if (Serial.available() > 0) {
+          String input = Serial.readString(); // Llegeix les dades del port sèrie
+          input.trim(); // Elimina espais en blanc al voltant de la cadena
+
+          // Si la dada rebuda és "stop", surt del bucle
+          if (input.equalsIgnoreCase("stop")) {
+            Serial.println("Cicles aturats per l'usuari.");
+            break;
+          }
+        }
       }
       Serial.println("Si vols començar els cicles de nou prem 'y' :");
       state = 10;
       break;
 
     case 10:
-    if (Serial.available()) {
+      if (Serial.available()) {
         char c = Serial.read();
         if (c == 'y' || c == 'Y') {
           state = 9;
         }
       }
-    
-    break;
-
+      break;
 
     default:
       break;
