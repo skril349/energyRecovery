@@ -25,13 +25,13 @@ template<> inline Print& operator <<(Print &obj, float arg) {
 int motornum;
 int state = 0;
 int test;
-float move_to = 10;
+float move_to = 15;
 float constantDeRotacio = 20 / 33;
-float turns = 10;
+float turns = 15;
 bool calibrated = false;
-int cicles = 2;
-int pauseIn = 8000;
-int pauseOut = 12000;
+int cicles = 10;
+int pauseIn = 15000;
+int pauseOut = 15000;
 float positionTolerance = 0.05;  // Tolerància per comprovar la posició del motor
 
 // SoftwareSerial for ODrive communication
@@ -64,7 +64,7 @@ void moveCenterFromLeft() {
 }
 
 void stopServo() {
-  myservo.write(90);  // situa el servomotor a la posició mitjana (90 graus)
+  myservo.write(91);  // situa el servomotor a la posició mitjana (90 graus)
 }
 
 void moveMotorToPosition(int axis, float voltes) {
