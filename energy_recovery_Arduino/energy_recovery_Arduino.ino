@@ -5,7 +5,12 @@
 #include <Servo.h>
 
 Servo myservo;  // crea un objecte Servo per controlar el servomotor
-
+int fan1 = 3;
+int fan2 = 4;
+int IN3 = 7;    // Input3 conectada al pin 5
+int IN4 = 6;    // Input4 conectada al pin 4 
+int ENB = 5;
+int pumpCicles = 5;
 // Constants per als estats del motor
 // Utilitza els valors de l'enum definits a ODriveEnums.h
 // AxisState AXIS_STATE_IDLE = 1;
@@ -27,12 +32,13 @@ int state = 0;
 int test;
 float move_to = 15;
 float constantDeRotacio = 20 / 33;
-float turns = 15;
+float turns = 30;
 bool calibrated = false;
-int cicles = 10;
+int cicles = 20;
 int pauseIn = 15000;
 int pauseOut = 15000;
-float positionTolerance = 0.05;  // Tolerància per comprovar la posició del motor
+//float positionTolerance = 0.05;
+float positionTolerance = 0.25;  // Tolerància per comprovar la posició del motor
 
 // SoftwareSerial for ODrive communication
 SoftwareSerial odrive_serial(8, 9);
@@ -197,13 +203,20 @@ void checkAndCalibrateAxis(int axis) {
 void setup() {
   // ODrive uses 115200 baud
   odrive_serial.begin(115200);
-
+  pinMode (ENB, OUTPUT); 
+  pinMode (IN3, OUTPUT);
+  pinMode (IN4, OUTPUT);
+  digitalWrite (IN3, LOW);
+  digitalWrite (IN4, LOW);
+  analogWrite(ENB,0);
   // Serial to PC
   Serial.begin(115200);
   myservo.attach(11);   // adjunta el servomotor al pin digital 11 de l'Arduino
   myservo.write(90);   // situa el servomotor a la posició mitjana (quiet)
   Serial.println("ODriveArduino");
   Serial.println("Setting parameters...");
+  pinMode(fan1, OUTPUT);
+  pinMode(fan2,OUTPUT);
 
   // Set parameters for both motors
   odrive_serial << "w axis0.controller.config.vel_limit " << 30.0f << '\n';
@@ -219,10 +232,13 @@ void setup() {
   odrive_serial << "w axis1.trap_traj.config.vel_lim " << 30.0f << '\n';
 
   Serial.println("Ready!");
+  digitalWrite(fan1, LOW);
+  digitalWrite(fan2, LOW);
   moveCenterFromRight();
   // Check and calibrate motors
   checkAndCalibrateAxis(0);
   checkAndCalibrateAxis(1);
+  
 
   Serial.println("posiciona el pistó 1 en la posició mínima de forma manual i introdueix la mostra. escriu 'y' quan ho tinguis fet i tanca la tapa amb el motor posat: ");
 }
@@ -307,6 +323,8 @@ void loop() {
       if (Serial.available()) {
         char c = Serial.read();
         if (c == 'y' || c == 'Y') {
+          digitalWrite(fan1, HIGH);
+          digitalWrite(fan2, LOW);
           state = 9;
         }
       }
@@ -314,20 +332,43 @@ void loop() {
 
     case 9:
       for (int i = 0; i < cicles; i++) {
+        
         Serial.println(pauseIn);
         delay(pauseIn);
+        digitalWrite(fan1, LOW);
+        digitalWrite(fan2, LOW);
         moveCenterFromRight();
+
+        if(i % pumpCicles == 0){
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, HIGH);
+          analogWrite(ENB,210);
+          delay(1000);
+          analogWrite(ENB,0);
+        }
+        else{
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, LOW);
+          analogWrite(ENB,0);
+          }
+        
         //moveMotorToPosition(1, move_to * -1);
         //moveMotorToPosition(0, turns * 20 / 33);
-
+        
         moveMotorsToPosition(0,turns * 20/33, 1, move_to * -1);
+        digitalWrite(fan1, LOW);
+        digitalWrite(fan2, HIGH);
         //delay(1000);
         moveRight();
         delay(pauseOut);
+        digitalWrite(fan1, LOW);
+        digitalWrite(fan2, LOW);
         moveCenterFromLeft();
         //moveMotorToPosition(1, 0);
         //moveMotorToPosition(0, 0);
         moveMotorsToPosition(0,0, 1,0);
+        digitalWrite(fan1, HIGH);
+        digitalWrite(fan2, LOW);
         //delay(1000);
         moveLeft();
         //delay(1000);
@@ -347,6 +388,8 @@ void loop() {
       }
       Serial.println("Si vols començar els cicles de nou prem 'y' :");
       state = 10;
+      digitalWrite(fan1, LOW);
+      digitalWrite(fan2, LOW);
       break;
 
     case 10:
