@@ -72,4 +72,4 @@ La funció `loop()` defineix els diferents estats que determinen el comportament
 
 ## Autor
 
-Aquest codi ha estat desenvolupat per gestionar una seqüència automatitzada de moviment i control de motors en un sistema complex amb Arduino.
+Aquest codi ha estat desenvolupat per gestionar una seqüència automatitzada de moviment i control de motors en un sistema complex amb Arduino per en Toni Vives Cabaleiro.
