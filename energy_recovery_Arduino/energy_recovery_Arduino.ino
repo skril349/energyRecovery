@@ -342,8 +342,8 @@ void loop() {
         if(i % pumpCicles == 0){
           digitalWrite (IN3, LOW);
           digitalWrite (IN4, HIGH);
-          analogWrite(ENB,210);
-          delay(1000);
+          analogWrite(ENB,255);
+          delay(2000);
           analogWrite(ENB,0);
         }
         else{
