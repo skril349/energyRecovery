@@ -10,7 +10,11 @@ int fan2 = 4;
 int IN3 = 7;    // Input3 conectada al pin 5
 int IN4 = 6;    // Input4 conectada al pin 4 
 int ENB = 5;
-int pumpCicles = 5;
+int pumpCicles = 1;
+int numeroCiclesInicial = 3; //8 = 20 minuts aprox
+int numeroCiclesFinal = 6; //6 = 15 minuts aprox
+
+int delayWaterPump = 2000;
 // Constants per als estats del motor
 // Utilitza els valors de l'enum definits a ODriveEnums.h
 // AxisState AXIS_STATE_IDLE = 1;
@@ -30,9 +34,9 @@ template<> inline Print& operator <<(Print &obj, float arg) {
 int motornum;
 int state = 0;
 int test;
-float move_to = 15;
+float move_to = 18;//18
 float constantDeRotacio = 20 / 33;
-float turns = 25;
+float turns = 25;//25
 bool calibrated = false;
 int cicles = 30;
 int pauseIn = 15000;
@@ -236,8 +240,9 @@ void setup() {
   digitalWrite(fan2, LOW);
   moveCenterFromRight();
   // Check and calibrate motors
-  checkAndCalibrateAxis(0);
   checkAndCalibrateAxis(1);
+  checkAndCalibrateAxis(0);
+  
   
 
   Serial.println("posiciona el pistó 1 en la posició mínima de forma manual i introdueix la mostra. escriu 'y' quan ho tinguis fet i tanca la tapa amb el motor posat: ");
@@ -321,29 +326,60 @@ void loop() {
 
     case 8:
       if (Serial.available()) {
+        
+        
+        
         char c = Serial.read();
         if (c == 'y' || c == 'Y') {
+       /*   for (int l = 0; l < numeroCiclesInicial; l++) {
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, HIGH);
+          analogWrite(ENB,255);
+          delay(delayWaterPump);
+          analogWrite(ENB,0);
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, LOW);
+        Serial.print(l);
+        Serial.print(" ");
+        //delay(pumpCicles*2*pauseIn);
+        delay(30000);
+        
+      }
+      digitalWrite (IN3, LOW);
+          digitalWrite (IN4, HIGH);
+          analogWrite(ENB,255);
+          delay(delayWaterPump);
+          analogWrite(ENB,0);
+
+         
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, LOW);
+        delay(30000);
+
+        */
           digitalWrite(fan1, HIGH);
           digitalWrite(fan2, LOW);
           state = 9;
+          
         }
       }
       break;
 
     case 9:
       for (int i = 0; i < cicles; i++) {
-        
-        Serial.println(pauseIn);
-        delay(pauseIn);
+        Serial.print("Cicle = ");
+        Serial.println(i);
+        delay(pauseIn-3000);
         digitalWrite(fan1, LOW);
         digitalWrite(fan2, LOW);
+        delay(3000);
         moveCenterFromRight();
 
         if(i % pumpCicles == 0){
           digitalWrite (IN3, LOW);
           digitalWrite (IN4, HIGH);
           analogWrite(ENB,255);
-          delay(2000);
+          delay(delayWaterPump);
           analogWrite(ENB,0);
         }
         else{
@@ -360,9 +396,10 @@ void loop() {
         digitalWrite(fan2, HIGH);
         //delay(1000);
         moveRight();
-        delay(pauseOut);
+        delay(pauseOut-3000);
         digitalWrite(fan1, LOW);
         digitalWrite(fan2, LOW);
+        delay(3000);
         moveCenterFromLeft();
         //moveMotorToPosition(1, 0);
         //moveMotorToPosition(0, 0);
@@ -386,16 +423,57 @@ void loop() {
           }
         }
       }
-      Serial.println("Si vols començar els cicles de nou prem 'y' :");
-      state = 10;
+
       digitalWrite(fan1, LOW);
       digitalWrite(fan2, LOW);
+
+/*for (int l = 0; l < numeroCiclesFinal; l++) {
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, HIGH);
+          analogWrite(ENB,255);
+          delay(delayWaterPump);
+          analogWrite(ENB,0);
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, LOW);
+        Serial.print(l);
+        Serial.print(" ");
+        delay(30000);
+      }
+
+      */
+      
+      Serial.println("Si vols començar els cicles de nou prem 'y' :");
+      state = 10;
+      
       break;
 
     case 10:
       if (Serial.available()) {
         char c = Serial.read();
         if (c == 'y' || c == 'Y') {
+          for (int l = 0; l < numeroCiclesInicial; l++) {
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, HIGH);
+          analogWrite(ENB,255);
+          delay(delayWaterPump);
+          analogWrite(ENB,0);
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, LOW);
+        Serial.print(l);
+        Serial.print(" ");
+        delay(30000);
+        
+      }
+      digitalWrite (IN3, LOW);
+          digitalWrite (IN4, HIGH);
+          analogWrite(ENB,255);
+          delay(delayWaterPump);
+          analogWrite(ENB,0);
+          digitalWrite (IN3, LOW);
+          digitalWrite (IN4, LOW);
+        delay(30000);
+          digitalWrite(fan1, HIGH);
+          digitalWrite(fan2, LOW);
           state = 9;
         }
       }
