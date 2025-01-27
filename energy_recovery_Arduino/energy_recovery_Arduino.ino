@@ -13,7 +13,7 @@ int ENB = 5;
 int pumpCicles = 1;
 int numeroCiclesInicial = 3; //8 = 20 minuts aprox
 int numeroCiclesFinal = 6; //6 = 15 minuts aprox
-
+int multimeter = 10;
 int delayWaterPump = 2000;
 // Constants per als estats del motor
 // Utilitza els valors de l'enum definits a ODriveEnums.h
@@ -52,22 +52,26 @@ ODriveArduino odrive(odrive_serial);
 
 //Servomotor:
 void moveLeft() {
+  digitalWrite(multimeter,HIGH);
   myservo.write(180); // mou el servomotor a l'esquerra
   delay(700);
   stopServo();
 }
 
 void moveRight() {
+  digitalWrite(multimeter,HIGH);
   myservo.write(0); // mou el servomotor a la dreta
   delay(700);
   stopServo();
 }
 void moveCenterFromRight() {
+  digitalWrite(multimeter,LOW);
   myservo.write(0); // mou el servomotor a la dreta
   delay(350);
   stopServo();
 }
 void moveCenterFromLeft() {
+  digitalWrite(multimeter,LOW);
   myservo.write(180); // mou el servomotor a la dreta
   delay(350);
   stopServo();
@@ -210,6 +214,7 @@ void setup() {
   pinMode (ENB, OUTPUT); 
   pinMode (IN3, OUTPUT);
   pinMode (IN4, OUTPUT);
+  pinMode(multimeter, OUTPUT);
   digitalWrite (IN3, LOW);
   digitalWrite (IN4, LOW);
   analogWrite(ENB,0);
@@ -369,10 +374,10 @@ void loop() {
       for (int i = 0; i < cicles; i++) {
         Serial.print("Cicle = ");
         Serial.println(i);
-        delay(pauseIn-3000);
+        delay(pauseIn-6000);
         digitalWrite(fan1, LOW);
         digitalWrite(fan2, LOW);
-        delay(3000);
+        delay(6000);
         moveCenterFromRight();
 
         if(i % pumpCicles == 0){
@@ -396,10 +401,10 @@ void loop() {
         digitalWrite(fan2, HIGH);
         //delay(1000);
         moveRight();
-        delay(pauseOut-3000);
+        delay(pauseOut-6000);
         digitalWrite(fan1, LOW);
         digitalWrite(fan2, LOW);
-        delay(3000);
+        delay(6000);
         moveCenterFromLeft();
         //moveMotorToPosition(1, 0);
         //moveMotorToPosition(0, 0);
